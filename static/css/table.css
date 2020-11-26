@@ -1,0 +1,19 @@
+body{
+    margin: 0;
+    background-color: #555555;
+}
+
+a{
+    color: white;
+    text-decoration: white;
+    font-size: medium;
+    padding: 10px;
+}
+
+table, tr, td{
+    border: yellow 1px solid;
+    text-align: center;
+    color: white;
+    width: 1000px;
+    padding: 20px;
+}

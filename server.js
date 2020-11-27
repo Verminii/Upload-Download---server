@@ -52,7 +52,8 @@ const sortDescForm = `
     </form>
 `;
 
-var path = require("path")
+var path = require("path");
+const { FORMERR } = require("dns");
 var isLoged = false
 var id = 4
 var users = [
@@ -86,16 +87,29 @@ app.get("/register", (req, res) => {
 })
 
 app.post("/register", (req, res) => {
-    users.push({
-        id: id,
-        log: req.body.log,
-        pass: req.body.pass,
-        age: parseInt(req.body.age),
-        student: req.body.student === "on",
-        gender: req.body.gender,
-    });
-    id += 1
-    res.send(`Dodano użytkownika ${req.body.log}`);
+    let check = false;
+    for (let i = 0; i < users.length; i++) {
+        if (users[i].log == req.body.log) {
+            check = true
+            break;
+        }
+    }
+    if (check = false) {
+        users.push({
+            id: id,
+            log: req.body.log,
+            pass: req.body.pass,
+            age: parseInt(req.body.age),
+            student: req.body.student === "on",
+            gender: req.body.gender,
+        });
+        id += 1
+        res.send(`Dodano użytkownika ${req.body.log}`);
+    }
+    else {
+        res.send(`Taki użytkownik już istnieje!`)
+    }
+
 
 })
 

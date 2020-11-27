@@ -87,14 +87,14 @@ app.get("/register", (req, res) => {
 })
 
 app.post("/register", (req, res) => {
-    let check = false;
+    var check = false;
     for (let i = 0; i < users.length; i++) {
         if (users[i].log == req.body.log) {
             check = true
             break;
         }
     }
-    if (check = false) {
+    if (check == false) {
         users.push({
             id: id,
             log: req.body.log,
@@ -106,7 +106,7 @@ app.post("/register", (req, res) => {
         id += 1
         res.send(`Dodano użytkownika ${req.body.log}`);
     }
-    else {
+    else if (check == true) {
         res.send(`Taki użytkownik już istnieje!`)
     }
 

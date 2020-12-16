@@ -1,256 +1,87 @@
-var express = require("express")
-var app = express()
+const express = require('express');
+const hbs = require('express-handlebars');
+const path = require('path');
+const formidable = require('formidable');
+const app = express();
 const PORT = process.env.PORT || 3000;
-
-var bodyParser = require("body-parser")
-app.use(bodyParser.urlencoded({ extended: true }));
-
+app.set('views', path.join(__dirname, 'views'));
+app.engine('hbs', hbs({ defaultLayout: 'main.hbs', extname: '.hbs', partialsDir: 'views/partials' }));
+app.set('view engine', 'hbs');
+app.use(express.static('static'))
 app.listen(PORT, function () {
     console.log("Server działa na porcie " + PORT)
 })
+let id = 0
+let fileInformation = []
 
-app.use(express.static('static'))
+app.get("/upload", function (req, res) {
+    res.render('upload.hbs');
+});
+app.get("/", function (req, res) {
+    res.redirect('/upload');
+});
 
-const html1 = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/table.css">
-    <title>USERS</title>
-</head>
-<body>
-    <div class="main">
-        <div class="nav">
-            <a href="/sort">Sort</a>
-            <a href="/gender">Gender</a>
-            <a href="/show">Show</a>
-        </div class="content">`;
+app.get("/filemanager", function (req, res) {
+    res.render('filemanager.hbs', { fileInformation });
+});
 
-const html2 = `
-</div>
-</div>
-</body>
-</html>`;
+app.get("/info", function (req, res) {
+    res.render('info.hbs');
+});
 
-const sortAscForm = `
-    <form onchange="submit()" method="POST">
-        <input type="radio" name="sorttype" value="rosnaco" checked>
-        <label for="ascending">rosnąco</label>
-        <input type="radio" name="sorttype" value="malejaca">
-        <label for="descending">malejąco</label>
-    </form>
-`;
+app.post('/handleUpload', function (req, res) {
+    let form = new formidable.IncomingForm();
+    form.uploadDir = __dirname + '/static/upload/';
+    form.keepExtensions = true;
+    form.multiples = true;
 
-const sortDescForm = `
-    <form onchange="submit()" method="POST">
-        <input type="radio" name="sorttype" value="rosnaco">
-        <label for="ascending">rosnąco</label>
-        <input type="radio" name="sorttype" value="malejaca" checked>
-        <label for="descending">malejąco</label>
-    </form>
-`;
-
-var path = require("path");
-const { FORMERR } = require("dns");
-var isLoged = false
-var id = 4
-var users = [
-    {
-        id: 1, log: "AAA", pass: "PASS1", age: 15, student: true, gender: "mezczyzna",
-    },
-    {
-        id: 2, log: "BBB", pass: "PASS2", age: 19, student: false, gender: "kobieta",
-    },
-    {
-        id: 3, log: "CCC", pass: "PASS3", age: 20, student: true, gender: "mezczyzna",
-    },
-];
-
-app.get("/", (req, res) => {
-
-    res.sendFile(path.join(__dirname + "/static/pages/main.html"))
-
-})
-
-app.get("/main", (req, res) => {
-
-    res.sendFile(path.join(__dirname + "/static/pages/main.html"))
-
-})
-
-app.get("/register", (req, res) => {
-
-    res.sendFile(path.join(__dirname + "/static/pages/register.html"))
-
-})
-
-app.post("/register", (req, res) => {
-    var check = false;
-    for (let i = 0; i < users.length; i++) {
-        if (users[i].log == req.body.log) {
-            check = true
-            break;
+    form.parse(req, (err, fields, files) => {
+        if (err) {
+            console.log(err)
+            return
         }
-    }
-    if (check == false) {
-        users.push({
-            id: id,
-            log: req.body.log,
-            pass: req.body.pass,
-            age: parseInt(req.body.age),
-            student: req.body.student === "on",
-            gender: req.body.gender,
-        });
-        id += 1
-        res.send(`Dodano użytkownika ${req.body.log}`);
-    }
-    else if (check == true) {
-        res.send(`Taki użytkownik już istnieje!`)
-    }
 
-
-})
-
-app.get("/login", (req, res) => {
-
-    res.sendFile(path.join(__dirname + "/static/pages/login.html"))
-
-})
-
-app.get("/logout", (req, res) => {
-    isLoged = false;
-    res.redirect("/main");
-
-})
-
-app.post("/login", (req, res) => {
-    let check = false;
-    for (let i = 0; i < users.length; i++) {
-        if (users[i].log == req.body.log && users[i].pass == req.body.pass)
-            check = true;
-    }
-    if (check == false) {
-        res.send("Błędny login lub hasło")
-    }
-    else {
-        isLoged = true;
-        res.redirect("/admin");
-    }
-})
-
-app.get("/admin", (req, res) => {
-    if (!isLoged)
-        res.sendFile(path.join(__dirname + "/static/pages/admin1.html"))
-    else
-        res.sendFile(path.join(__dirname + "/static/pages/admin2.html"))
-})
-
-app.get("/sort", (req, res) => {
-    if (isLoged) {
-        users.sort((a, b) => a.age - b.age);
-        let htmlForm = sortAscForm;
-        let Table = sortTable();
-        let document = html1 + htmlForm + Table + html2;
-        res.send(document);
-    }
-})
-
-app.post("/sort", (req, res) => {
-    if (req.body.sorttype === "rosnaco") {
-        users.sort((a, b) => a.age - b.age);
-        htmlForm = sortAscForm;
-    } else {
-        users.sort((a, b) => b.age - a.age);
-        htmlForm = sortDescForm;
-    }
-    let Table = sortTable();
-    let document = html1 + htmlForm + Table + html2;
-    res.send(document);
-})
-
-app.get("/gender", (req, res) => {
-    if (isLoged) {
-        let Table = genderTable();
-        let document = html1 + Table + html2;
-        res.send(document);
-    }
-})
-
-app.get("/show", (req, res) => {
-    if (isLoged) {
-        let Table = showTable();
-        let document = html1 + Table + html2;
-        res.send(document);
-    }
-
-})
-
-function showTable() {
-    let table = "<table>"
-    let student;
-    for (let i = 0; i < users.length; i++) {
-        if (users[i].student) {
-            student = "check"
+        if (Array.isArray(files.fileToUpload)) {
+            files.fileToUpload.forEach((element) => {
+                id++;
+                fileInformation.push({ id: id, imagePath: `gfx/${getExtension(element.name)}.png`, name: element.name, size: element.size, type: element.type, generatedName: path.basename(element.path), date: new Date().getTime(), path: element.path });
+            });
         }
         else {
-            student = ""
-        }
-        table += `
-        <tr>
-                <td>Id: ${users[i].id}</td>
-                <td>User: ${users[i].log} - ${users[i].pass}</td>
-                <td>Student: ${student}</td>
-                <td>Age: ${users[i].age}</td>
-                <td>Gender: ${users[i].gender}</td>
-            </tr>
-        `
-    }
-    table += "</table>";
-    return table
-}
 
-function genderTable() {
-    let table = "<table>";
-    for (let i = 0; i < users.length; i++) {
-        if (users[i].gender == "mezczyzna") {
-            table += `
-            <tr>
-                    <td>Id: ${users[i].id}</td>
-                    <td>Płeć: ${users[i].gender}</td>
-                </tr>
-            `
+            id++;
+            fileInformation.push({ id: id, imagePath: `gfx/${getExtension(files.fileToUpload.name)}.png`, name: files.fileToUpload.name, size: files.fileToUpload.size, type: files.fileToUpload.type, generatedName: path.basename(files.fileToUpload.path), date: new Date().getTime(), path: files.fileToUpload.path });
         }
-    }
-    table += "</table><br>";
-    table += "<table>";
-    for (let i = 0; i < users.length; i++) {
-        if (users[i].gender == "kobieta") {
-            table += `
-            <tr>
-                    <td>Id: ${users[i].id}</td>
-                    <td>Płeć: ${users[i].gender}</td>
-                </tr>
-            `
+
+        res.redirect('/filemanager');
+    });
+
+});
+
+app.get('/delete:p', function (req, res) {
+    const id = req.params.p;
+    fileInformation.forEach((e, i, a) => {
+        if (e.id == id) {
+            a.splice(i, 1);
         }
-    }
-    table += "</table>";
+    });
+    res.redirect('/filemanager');
+});
 
-    return table;
-}
+app.get('/dAll', function (req, res) {
+    fileInformation.length = 0;
+    res.redirect('/filemanager');
+});
 
-function sortTable() {
-    let table = "<table>"
-    for (let i = 0; i < users.length; i++) {
-        table += `
-        <tr>
-                <td>Id: ${users[i].id}</td>
-                <td>User: ${users[i].log} - ${users[i].pass}</td>
-                <td>Age: ${users[i].age}</td>
-            </tr>
-        `
-    }
-    table += "</table>";
-    return table
-}
+app.get('/info:p', function (req, res) {
+    const id = req.params.p;
+    fileInformation.forEach((e) => {
+        if (e.id == id) {
+            res.render('info.hbs', { e });
+        }
+    });
+});
+
+const getExtension = (filename) => {
+    return filename.substr(filename.indexOf('.') + 1);
+};
